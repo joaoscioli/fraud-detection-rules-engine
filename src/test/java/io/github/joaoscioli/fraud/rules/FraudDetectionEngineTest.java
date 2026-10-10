@@ -20,6 +20,7 @@ class FraudDetectionEngineTest {
             50,
             100
     );
+    private final FraudDetectionEngine balancedEngine = FraudDetectionProfiles.balanced();
 
     @Test
     void approvesLowRiskTransaction() {
@@ -70,6 +71,17 @@ class FraudDetectionEngineTest {
         assertEquals(RiskLevel.APPROVED, decision.riskLevel());
         assertEquals(30, decision.score());
         assertEquals(List.of("UNUSUAL_HOUR"), ruleCodes(decision));
+    }
+
+    @Test
+    void exposesBalancedProfileForCommonRiskEvaluation() {
+        Transaction transaction = transaction("1500.00", "US", "BR");
+
+        FraudDecision decision = balancedEngine.evaluate(transaction);
+
+        assertEquals(RiskLevel.BLOCKED, decision.riskLevel());
+        assertEquals(110, decision.score());
+        assertEquals(List.of("HIGH_AMOUNT", "COUNTRY_MISMATCH"), ruleCodes(decision));
     }
 
     private static Transaction transaction(String amount, String merchantCountry, String cardholderCountry) {
