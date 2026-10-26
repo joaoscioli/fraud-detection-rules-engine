@@ -9,7 +9,16 @@ public final class HighAmountRule implements FraudRule {
     private final BigDecimal threshold;
     private final int score;
 
-    public HighAmountRule(BigDecimal threshold, int score) {
+    public HighAmountRule(BigDecimal threshold, int score) throws IllegalArgumentException {
+        if (threshold == null) {
+            throw new IllegalArgumentException("Threshold must be greater than zero");
+        }
+        if (threshold.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Threshold must be greater than zero");
+        }
+        if (score <= 0) {
+            throw new IllegalArgumentException("Score must be greater than zero");
+        }
         this.threshold = threshold;
         this.score = score;
     }
