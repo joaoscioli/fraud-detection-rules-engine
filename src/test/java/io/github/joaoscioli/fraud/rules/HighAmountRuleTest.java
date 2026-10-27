@@ -1,12 +1,13 @@
 package io.github.joaoscioli.fraud.rules;
 
+import io.github.joaoscioli.fraud.domain.Transaction;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-
+import java.time.Instant;
 import java.math.BigDecimal;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class HighAmountRuleTest {
     @Test
@@ -33,4 +34,46 @@ public class HighAmountRuleTest {
         assertThrows(IllegalArgumentException.class, () -> new HighAmountRule(threshold, score));
     }
 
+    @Test
+    void shouldNotTriggerWhenAmountEqualsThreshold() {
+        HighAmountRule rule = new HighAmountRule(new BigDecimal(1000), 60);
+        Transaction transaction = new Transaction(
+                "txn-001",
+                "account-001",
+                new BigDecimal("1000.00"),
+                "BR",
+                "BR",
+                Instant.parse("2023-01-01T00:00:00Z")
+        );
+        var result = rule.evaluate(transaction);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void shouldTriggerWhenAmountExceedsThreshold() {
+        HighAmountRule rule = new HighAmountRule(new BigDecimal("1000.00"), 60);
+        Transaction transaction = new Transaction(
+                "txn-001",
+                "account-001",
+                new BigDecimal("1000.01"),
+                "BR",
+                "BR",
+                Instant.parse("2023-01-01T00:00:00Z")
+        );
+        var result = rule.evaluate(transaction);
+        RuleResult ruleResult = result.orElseThrow();
+
+        assertEquals("HIGH_AMOUNT", ruleResult.ruleCode());
+        assertEquals(60, ruleResult.score());
+    }
+
+
+    @ParameterizedTest
+    @ValueSource(ints = {-100, -1, 0})
+    void shouldRejectNonPositiveScoreTest(int score) {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new CountryMismatchRule(score)
+        );
+    }
 }

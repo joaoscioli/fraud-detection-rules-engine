@@ -8,7 +8,13 @@ public final class CountryMismatchRule implements FraudRule {
     private final int score;
 
     public CountryMismatchRule(int score) {
+        if (score <= 0) {
+            throw new IllegalArgumentException(
+                    "Score must be a positive integer"
+            );
+        }
         this.score = score;
+
     }
 
     @Override
