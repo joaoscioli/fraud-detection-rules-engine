@@ -10,13 +10,29 @@ public final class UnusualHourRule implements FraudRule {
     private final int endHourExclusive;
     private final int score;
 
-    public UnusualHourRule(int startHourInclusive, int endHourExclusive, int score) {
-        if (startHourInclusive < 0 || startHourInclusive > 23 || endHourExclusive < 1 || endHourExclusive > 24) {
-            throw new IllegalArgumentException("hours must be within a 24-hour day");
+
+    public UnusualHourRule(
+            int startHourInclusive,
+            int endHourExclusive,
+            int score
+    ) {
+        if (startHourInclusive < 0 || startHourInclusive > 23
+                || endHourExclusive < 0 || endHourExclusive > 24) {
+            throw new IllegalArgumentException(
+                    "Hours must be within a 24-hour day"
+            );
         }
 
-        if (startHourInclusive >= endHourExclusive) {
-            throw new IllegalArgumentException("start hour must be before end hour");
+        if (startHourInclusive == endHourExclusive) {
+            throw new IllegalArgumentException(
+                    "Start and end hours must be different"
+            );
+        }
+
+        if (score <= 0) {
+            throw new IllegalArgumentException(
+                    "Score must be greater than zero"
+            );
         }
 
         this.startHourInclusive = startHourInclusive;
@@ -24,20 +40,38 @@ public final class UnusualHourRule implements FraudRule {
         this.score = score;
     }
 
+
+
     @Override
     public Optional<RuleResult> evaluate(Transaction transaction) {
         int hour = transaction.occurredAt()
                 .atZone(ZoneOffset.UTC)
                 .getHour();
 
-        if (hour < startHourInclusive || hour >= endHourExclusive) {
+        boolean crossesMidnight =
+                startHourInclusive > endHourExclusive;
+
+        boolean insideWindow;
+
+        if (crossesMidnight) {
+            insideWindow =
+                    hour >= startHourInclusive
+                            || hour < endHourExclusive;
+        } else {
+            insideWindow =
+                    hour >= startHourInclusive
+                            && hour < endHourExclusive;
+        }
+
+        if (!insideWindow) {
             return Optional.empty();
         }
 
         return Optional.of(new RuleResult(
                 "UNUSUAL_HOUR",
                 score,
-                "Transaction happened inside a configured unusual-hour window"
+                "Transaction occurred during unusual hours"
         ));
     }
+
 }
