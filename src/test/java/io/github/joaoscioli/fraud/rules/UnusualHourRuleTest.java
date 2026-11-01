@@ -72,7 +72,7 @@ class UnusualHourRuleTest {
 
         assertTrue(rule.evaluate(transaction).isPresent());
     }
-    // teste
+    // test function
 
     @ParameterizedTest
     @ValueSource(ints = {5, 12, 23})
