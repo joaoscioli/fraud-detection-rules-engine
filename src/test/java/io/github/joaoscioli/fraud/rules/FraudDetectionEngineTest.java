@@ -177,4 +177,69 @@ class FraudDetectionEngineTest {
         assertEquals(2, decision.triggeredRules().size());
     }
 
+
+    @Test
+    void shouldBlockWhenScoreEqualsBlockThreshold() {
+        // Arrange
+        FraudRule rule = transaction ->
+                Optional.of(new RuleResult(
+                        "TEST_RULE",
+                        100,
+                        "Score exactly at block threshold"
+                ));
+
+        FraudDetectionEngine engine = new FraudDetectionEngine(
+                List.of(rule),
+                50,
+                100
+        );
+
+        Transaction transaction = transaction(
+                "250.00",
+                "BR",
+                "BR"
+        );
+
+        // Act
+        FraudDecision decision = engine.evaluate(transaction);
+
+        // Assert
+        assertEquals(RiskLevel.BLOCKED, decision.riskLevel());
+        assertEquals(100L, decision.score());
+        assertEquals(1, decision.triggeredRules().size());
+    }
+
+
+    @Test
+    void shouldReviewWhenScoreIsBelowBlockThreshold() {
+        // Arrange
+        FraudRule rule = transaction ->
+                Optional.of(new RuleResult(
+                        "TEST_RULE",
+                        99,
+                        "Score immediately below block threshold"
+                ));
+
+        FraudDetectionEngine engine = new FraudDetectionEngine(
+                List.of(rule),
+                50,
+                100
+        );
+
+        Transaction transaction = transaction(
+                "250.00",
+                "BR",
+                "BR"
+        );
+
+        // Act
+        FraudDecision decision = engine.evaluate(transaction);
+
+        // Assert
+        assertEquals(RiskLevel.REVIEW, decision.riskLevel());
+        assertEquals(99L, decision.score());
+        assertEquals(1, decision.triggeredRules().size());
+    }
+
+
 }
