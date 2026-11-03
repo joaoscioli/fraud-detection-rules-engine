@@ -27,14 +27,14 @@ public final class FraudDetectionEngine {
                 .flatMap(OptionalUtils::stream)
                 .toList();
 
-        int score = triggeredRules.stream()
-                .mapToInt(RuleResult::score)
+        long score = triggeredRules.stream()
+                .mapToLong(RuleResult::score)
                 .sum();
 
         return new FraudDecision(resolveRiskLevel(score), score, triggeredRules);
     }
 
-    private RiskLevel resolveRiskLevel(int score) {
+    private RiskLevel resolveRiskLevel(long score) {
         if (score >= blockThreshold) {
             return RiskLevel.BLOCKED;
         }
