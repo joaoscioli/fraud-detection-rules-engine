@@ -10,6 +10,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -112,4 +113,5 @@ class UnusualHourRuleTest {
                 () -> new UnusualHourRule(start, end, 30)
         );
     }
+
 }

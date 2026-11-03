@@ -7,8 +7,10 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class FraudDetectionEngineTest {
     private final FraudDetectionEngine engine = new FraudDetectionEngine(
@@ -100,4 +102,79 @@ class FraudDetectionEngineTest {
                 .map(RuleResult::ruleCode)
                 .toList();
     }
+
+        @Test
+    void shouldReviewWhenScoreEqualsReviewThreshold() {
+        // Arrange
+        FraudRule rule = transaction ->
+                Optional.of(new RuleResult(
+                        "TEST_RULE",
+                        50,
+                        "Test rule"
+                ));
+
+        FraudDetectionEngine engine = new FraudDetectionEngine(
+                List.of(rule),
+                50,
+                100
+        );
+
+        Transaction transaction = new Transaction(
+                "txn-001",
+                "account-001",
+                new BigDecimal("250.00"),
+                "BR",
+                "BR",
+                Instant.parse("2026-01-01T10:00:00Z")
+        );
+
+        // Act
+        FraudDecision decision = engine.evaluate(transaction);
+
+        // Assert
+        assertEquals(RiskLevel.REVIEW, decision.riskLevel());
+        assertEquals(50L, decision.score());
+        assertEquals(1, decision.triggeredRules().size());
+        assertEquals(
+                "TEST_RULE",
+                decision.triggeredRules().get(0).ruleCode()
+        );
+    }
+
+
+    @Test
+    void shouldHandleScoresBeyondIntegerMaxValue() {
+        FraudRule ruleA = transaction ->
+                Optional.of(new RuleResult(
+                        "RULE_A",
+                        2_000_000_000,
+                        "High risk A"
+                ));
+
+        FraudRule ruleB = transaction ->
+                Optional.of(new RuleResult(
+                        "RULE_B",
+                        500_000_000,
+                        "High risk B"
+                ));
+
+        FraudDetectionEngine engine = new FraudDetectionEngine(
+                List.of(ruleA, ruleB),
+                50,
+                100
+        );
+
+        Transaction transaction = transaction(
+                "250.00",
+                "BR",
+                "BR"
+        );
+
+        FraudDecision decision = engine.evaluate(transaction);
+
+        assertEquals(2_500_000_000L, decision.score());
+        assertEquals(RiskLevel.BLOCKED, decision.riskLevel());
+        assertEquals(2, decision.triggeredRules().size());
+    }
+
 }
