@@ -20,8 +20,30 @@ public record Transaction(
         Objects.requireNonNull(cardholderCountry, "cardholderCountry must not be null");
         Objects.requireNonNull(occurredAt, "occurredAt must not be null");
 
+        if (id.isBlank()) {
+            throw new IllegalArgumentException("id must not be blank");
+        }
+
+        if (accountId.isBlank()) {
+            throw new IllegalArgumentException("accountId must not be blank");
+        }
+
         if (amount.signum() <= 0) {
             throw new IllegalArgumentException("amount must be positive");
+        }
+
+        validateCountryCode(merchantCountry, "merchantCountry");
+        validateCountryCode(cardholderCountry, "cardholderCountry");
+    }
+
+    private static void validateCountryCode(
+            String country,
+            String fieldName
+    ) {
+        if (!country.matches("[A-Za-z]{2}")) {
+            throw new IllegalArgumentException(
+                    fieldName + " must be a two-letter country code"
+            );
         }
     }
 }
